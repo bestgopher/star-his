@@ -17,6 +17,15 @@ async fn main() {
         std::process::exit(1);
     };
 
+    // 判断仓库的个数
+    match repos.find(',') {
+        Some(x) if x > 5 => {
+            println!("the number of repo greater than 5.");
+            std::process::exit(1);
+        }
+        _ => ()
+    };
+
     let handlers = repos.split(",").map(|repo| {
         let repo = repo.to_string();
         tokio::spawn(async move { github::handle(repo, None).await })

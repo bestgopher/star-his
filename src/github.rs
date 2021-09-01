@@ -14,25 +14,49 @@ lazy_static! {
 
 #[derive(Deserialize, Debug)]
 pub(crate) struct StargazerData {
-    starred_at: DateTime<Utc>
+    pub(crate) starred_at: DateTime<Utc>
 }
 
 #[derive(Debug)]
 pub(crate) struct DataWithPage {
-    page: i32,
-    data: Vec<StargazerData>,
+    pub(crate) page: i32,
+    pub(crate) data: Vec<StargazerData>,
 }
 
 #[derive(Debug)]
 pub(crate) struct Data {
-    repo: String,
-    data: Vec<DataWithPage>,
+    pub(crate) repo: String,
+    pub(crate) data: Vec<DataWithPage>,
+    pub(crate) current_num: i32,
+}
+
+#[derive(Deserialize)]
+struct RepoInfo {
+    stargazers_count: i32
+}
+
+async fn get_current_num(repo: String, token: Option<String>) -> i32 {
+    let r = Client::new()
+        .get(format!("https://api.github.com/repos/{}", repo))
+        .header("Accept", "application/vnd.github.v3+json")
+        .header(
+            "Authorization",
+            token.map(|x| format!("token {}", x)).unwrap_or("".to_string()),
+        )
+        .header(
+            "User-Agent",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 \
+            (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36")
+        .send()
+        .await.unwrap();
+
+    r.json::<RepoInfo>().await.unwrap().stargazers_count
 }
 
 /// 请求github接口获取数据
 pub(crate) async fn get_info(repo: String, token: Option<String>, page: i32) -> anyhow::Result<Response> {
     Client::new()
-        .get(format!("https://api.github.com/repos/{}/stargazers?page={}", repo, page))
+        .get(format!("https://api.github.com/repos/{}/stargazers?page={}&per_page=100", repo, page))
         .header("Accept", "application/vnd.github.v3.star+json")
         .header(
             "Authorization",
@@ -66,6 +90,7 @@ pub(crate) async fn handle(repo: String, token: Option<String>) -> Data {
     let mut data = Data {
         data: vec![DataWithPage { data: res.json::<Vec<StargazerData>>().await.unwrap(), page: 1 }],
         repo: repo.clone(),
+        current_num: get_current_num(repo.clone(), token.clone()).await,
     };
     let handlers = match page {
         1 => return data,
@@ -105,7 +130,7 @@ pub(crate) async fn handle(repo: String, token: Option<String>) -> Data {
 
 #[cfg(test)]
 mod tests {
-    use crate::github::{get_info, StargazerData, RE, handle};
+    use crate::github::{get_info, StargazerData, RE, handle, get_current_num};
 
     #[test]
     fn test_get_info() {
@@ -130,6 +155,14 @@ mod tests {
     fn test_handle() {
         tokio::runtime::Runtime::new().unwrap().block_on(async {
             let r = handle("vuejs/vue".to_string(), None).await;
+            println!("{:?}", r);
+        });
+    }
+
+    #[test]
+    fn test_get_current_num() {
+        tokio::runtime::Runtime::new().unwrap().block_on(async {
+            let r = get_current_num("vuejs/vue".to_string(), None).await;
             println!("{:?}", r);
         });
     }

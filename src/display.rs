@@ -7,6 +7,7 @@ use tui::layout::{Layout, Constraint, Direction, *};
 use tui::style::{Style, Color, *};
 use tui::symbols::{self, *};
 use tui::text::*;
+use chrono::{DateTime, Utc, Datelike};
 
 pub(crate) fn display(data: Vec<Data>) -> Result<(), io::Error> {
     return Ok(());
@@ -22,35 +23,60 @@ pub(crate) fn display(data: Vec<Data>) -> Result<(), io::Error> {
             )
             .split(f.size());
 
-        let datasets = vec![
-            Dataset::default()
-                .name("data1")
-                .marker(symbols::Marker::Dot)
-                .graph_type(GraphType::Scatter)
-                .style(Style::default().fg(Color::Cyan))
-                .data(&[(0.0, 5.0), (1.0, 6.0), (1.5, 6.434)]),
-            Dataset::default()
-                .name("data2")
-                .marker(symbols::Marker::Dot)
-                .graph_type(GraphType::Line)
-                .style(Style::default().fg(Color::Magenta))
-                .data(&[(4.0, 5.0), (5.0, 8.0), (7.66, 13.5)]),
-        ];
+        let mut datasets = get_datasets(&data);
+        let datas = get_datasets_date(&data);
+
+        let datasets: Vec<Dataset> = datasets
+            .into_iter()
+            .zip(datas.iter())
+            .map(|(mut x, y)| x.data(y))
+            .collect();
+
 
         let c = Chart::new(datasets)
-            .block(Block::default().title("Chart"))
+            .block(Block::default().title("star-history"))
             .x_axis(Axis::default()
-                .title(Span::styled("X Axis", Style::default().fg(Color::Red)))
+                .title(Span::styled("year", Style::default().fg(Color::White)))
                 .style(Style::default().fg(Color::White))
                 .bounds([0.0, 10.0])
                 .labels(["0.0", "5.0", "10.0"].iter().cloned().map(Span::from).collect()))
             .y_axis(Axis::default()
-                .title(Span::styled("Y Axis", Style::default().fg(Color::Red)))
+                .title(Span::styled("stars", Style::default().fg(Color::White)))
                 .style(Style::default().fg(Color::White))
                 .bounds([0.0, 10.0])
                 .labels(["0.0", "5.0", "10.0"].iter().cloned().map(Span::from).collect()));
 
-        f.render_widget(c, chunk);
+        f.render_widget(c, chunks[0]);
     })?;
     Ok(())
+}
+
+fn get_datasets(data: &[Data]) -> Vec<Dataset> {
+    data
+        .into_iter()
+        .enumerate()
+        .map(|(index, x)| {
+            Dataset::default()
+                .name(&x.repo)
+                .marker(symbols::Marker::Braille)
+                .graph_type(GraphType::Line)
+                .style(Style::default().fg(get_datasets_color(index)))
+        })
+        .collect()
+}
+
+fn get_datasets_color(index: usize) -> Color {
+    match index {
+        0 => Color::Red,
+        1 => Color::Green,
+        2 => Color::Yellow,
+        3 => Color::Blue,
+        4 => Color::Magenta,
+        _ => panic!("to many repos")
+    }
+}
+
+/// todo
+fn get_datasets_date(data: &[Data]) -> Vec<Vec<(f64, f64)>> {
+    vec![]
 }
