@@ -1,9 +1,8 @@
 #![deny(private_in_public, unreachable_pub)]
 
-mod github;
 mod display;
+mod github;
 
-use std::io;
 use crate::github::Data;
 use tokio::task::JoinHandle;
 
@@ -17,19 +16,26 @@ async fn main() {
         std::process::exit(1);
     };
 
-    // 判断仓库的个数
-    match repos.find(',') {
-        Some(x) if x > 5 => {
-            println!("the number of repo greater than 5.");
-            std::process::exit(1);
-        }
-        _ => ()
-    };
+    let token = args.get(2);
 
-    let handlers = repos.split(",").map(|repo| {
-        let repo = repo.to_string();
-        tokio::spawn(async move { github::handle(repo, None).await })
-    }).collect::<Vec<JoinHandle<Data>>>();
+    let repos = repos
+        .split(',')
+        .map(|x| x.to_string())
+        .collect::<Vec<String>>();
+
+    // 判断仓库的个数
+    if repos.len() > 5 {
+        println!("the number of repo greater than 5.");
+        std::process::exit(1);
+    }
+
+    let handlers = repos
+        .into_iter()
+        .map(|repo| {
+            let token = token.cloned();
+            tokio::spawn(async move { github::handle(repo, token).await })
+        })
+        .collect::<Vec<JoinHandle<Data>>>();
 
     let mut data = Vec::with_capacity(handlers.len());
 
