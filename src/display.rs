@@ -150,18 +150,7 @@ fn get_x_label(datas: &[Data]) -> Vec<String> {
         .min()
         .unwrap_or(now_year);
 
-    if now_year - min_year < 5 {
-        (min_year..=now_year)
-            .into_iter()
-            .map(|x| x.to_string())
-            .collect()
-    } else {
-        (min_year..=now_year + 5)
-            .into_iter()
-            .step_by(((now_year + 5 - min_year) / 5) as usize)
-            .map(|x| x.to_string())
-            .collect()
-    }
+    get_label_strings(min_year, now_year)
 }
 
 fn get_y_label(datas: &[Data]) -> Vec<String> {
@@ -169,15 +158,16 @@ fn get_y_label(datas: &[Data]) -> Vec<String> {
 
     let max_star = datas.iter().map(|x| x.current_num).max().unwrap_or(0);
 
-    if max_star - min_star < 5 {
-        (min_star..=max_star)
-            .into_iter()
-            .map(|x| x.to_string())
-            .collect()
+    get_label_strings(min_star, max_star)
+}
+
+fn get_label_strings(min: i32, max: i32) -> Vec<String> {
+    if max - min < 5 {
+        (min..=max).into_iter().map(|x| x.to_string()).collect()
     } else {
-        (min_star..=max_star + 5)
+        (min..=max + 5)
             .into_iter()
-            .step_by(((max_star + 5 - min_star) / 5) as usize)
+            .step_by(((max + 5 - min) / 5) as usize)
             .map(|x| x.to_string())
             .collect()
     }
