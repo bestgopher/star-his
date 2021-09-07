@@ -12,7 +12,7 @@ async fn main() {
     let repos = if let Some(repos) = args.get(1) {
         repos
     } else {
-        println!("please input the repo name");
+        eprintln!("please input the repo name");
         std::process::exit(1);
     };
 
@@ -25,7 +25,7 @@ async fn main() {
 
     // 判断仓库的个数
     if repos.len() > 5 {
-        println!("the number of repo greater than 5.");
+        eprintln!("the number of repo greater than 5.");
         std::process::exit(1);
     }
 
