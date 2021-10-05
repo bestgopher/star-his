@@ -60,19 +60,23 @@ fn get_datasets(data: &[Data]) -> Vec<Dataset> {
                 .name(&x.repo)
                 .marker(symbols::Marker::Braille)
                 .graph_type(GraphType::Line)
-                .style(Style::default().fg(get_datasets_color(index)))
+                .style(Style::default().fg(ColorWrapper::from(index).0))
         })
         .collect()
 }
 
-fn get_datasets_color(index: usize) -> Color {
-    match index {
-        0 => Color::Red,
-        1 => Color::Green,
-        2 => Color::Yellow,
-        3 => Color::Blue,
-        4 => Color::Magenta,
-        _ => panic!("to many repos"),
+struct ColorWrapper(Color);
+
+impl From<usize> for ColorWrapper {
+    fn from(index: usize) -> ColorWrapper {
+        ColorWrapper(match index {
+            0 => Color::Red,
+            1 => Color::Green,
+            2 => Color::Yellow,
+            3 => Color::Blue,
+            4 => Color::Magenta,
+            _ => panic!("to many repos"),
+        })
     }
 }
 
